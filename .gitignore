@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.tools/
+node-v*-win-x64.zip
+playwright-report/
+test-results/
+coverage/
+.vite/
+
+# Local logs and settings
+*.log
+.env
+.env.*.local
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

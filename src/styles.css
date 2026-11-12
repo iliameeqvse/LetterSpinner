@@ -1,0 +1,32 @@
+:root { font-family: system-ui, sans-serif; color: #1e2330; background: #f5f3ee; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.app { max-width: 1050px; margin: auto; padding: 28px 18px 60px; }
+h1 { margin: 0 0 6px; font-size: 2rem; }
+header p { margin: 0 0 22px; color: #505664; }
+.toolbar { background: white; border: 1px solid #d8dbe1; border-radius: 14px; padding: 18px; display: grid; gap: 14px; }
+.upload { display: block; position: relative; border: 2px dashed #8695ac; border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; }
+.upload.dragging { border-color: #275ab0; background: #eaf1ff; }
+.upload span { color: #2153aa; text-decoration: underline; }
+.upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.document-controls,.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.document-controls { justify-content: space-between; }
+#filename { overflow-wrap: anywhere; }
+button { font: inherit; border: 1px solid #9ca9bf; border-radius: 7px; background: #f8faff; padding: 7px 12px; cursor: pointer; }
+button:hover:enabled { background: #e9f1ff; }
+button:disabled,input:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 3px solid #2063d1; outline-offset: 3px; }
+#speed { width: 145px; }
+.toggle { white-space: nowrap; }
+#status { min-height: 1.5em; margin: 16px 0 4px; }
+.scope { color: #59616e; font-size: .9rem; margin: 0 0 16px; }
+.reader { min-height: 240px; max-height: 75vh; overflow-y: auto; max-width: 80ch; margin: auto; padding: 30px; background: white; border: 1px solid #d8dbe1; border-radius: 12px; font-size: 24px; line-height: 1.8; white-space: normal; overflow-wrap: anywhere; }
+.reader p { margin: 0; }
+.reader .placeholder { color: #757b86; }
+.word { display: inline-block; white-space: nowrap; max-width: 100%; }
+.letter-box { display: inline-block; padding-inline: .05em; }
+.letter { display: inline-block; transform-origin: center center; }
+.reader-plain { white-space: pre-wrap; }
+.reader-animated { user-select: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media(max-width: 600px) { .app { padding: 16px 10px 35px; } .reader { padding: 18px 14px; font-size: 21px; } }
