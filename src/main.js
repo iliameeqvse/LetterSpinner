@@ -5,13 +5,14 @@ import { createParameters, PageClock, ALIGNMENT_SECONDS } from './spinner.js';
 import { ReaderView } from './reader-view.js';
 
 const $ = id => document.getElementById(id);
-const ui = Object.fromEntries(['file','drop-area','filename','close','previous','next','retry','page-label','pause','speed','speed-value','normal','status','reader'].map(id => [id.replace('-', ''), $(id)]));
+const ui = Object.fromEntries(['file','drop-area','filename','close','previous','next','retry','page-label','pause','speed','speed-value','min-turns','max-turns','normal','status','reader'].map(id => [id.replace('-', ''), $(id)]));
 const view = new ReaderView(ui.reader);
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 let reader = null, documentGeneration = 0, pageGeneration = 0;
 let count = 0, pageNumber = 0, model = null, busy = false;
 let seed = 0, cache = new Map(), clocks = new Map();
 let speed = 1, userPaused = false, normalMode = false;
+let turnRange = { minTurns: 2, maxTurns: 4 };
 
 function status(message) { ui.status.textContent = message; }
 function clock() {
@@ -98,7 +99,7 @@ async function showPage(target) {
     else if (next.staticReason === 'page-text-limit') { view.clear('This page exceeds the 20,000-character reading limit.'); status('Page text limit exceeded.'); model = null; }
     else {
       const staticMode = normalMode || motion.matches || !next.animationAllowed;
-      view.show(next, { normal: staticMode, seed, elapsed: clock().getElapsed(), speed, playing: false, parameters: createParameters });
+      view.show(next, { normal: staticMode, seed, elapsed: clock().getElapsed(), speed, playing: false, parameters: createParameters, turnRange });
       status(next.warnings?.length ? next.warnings.join(' ') : `Page ${target} ready. All letters align every ${ALIGNMENT_SECONDS} seconds at 1×.`);
       sync();
     }
@@ -112,8 +113,28 @@ async function showPage(target) {
 }
 function redraw() {
   settle();
-  if (model) view.show(model, { normal: normalMode || motion.matches, seed, elapsed: clock().getElapsed(), speed, playing: false, parameters: createParameters });
+  if (model) view.show(model, { normal: normalMode || motion.matches, seed, elapsed: clock().getElapsed(), speed, playing: false, parameters: createParameters, turnRange });
   sync(); controls();
+}
+function changeTurnRange(changed) {
+  let minTurns = Number(ui.minturns.value);
+  let maxTurns = Number(ui.maxturns.value);
+  if (minTurns >= maxTurns) {
+    if (changed === 'min') maxTurns = minTurns + 1;
+    else minTurns = maxTurns - 1;
+  }
+  ui.minturns.value = String(minTurns);
+  ui.maxturns.value = String(maxTurns);
+  turnRange = { minTurns, maxTurns };
+  const scrollTop = ui.reader.scrollTop;
+  settle();
+  clocks.forEach(pageClock => pageClock.dispose());
+  clocks.clear();
+  if (model) {
+    redraw();
+    ui.reader.scrollTop = scrollTop;
+    status('Letter speeds updated. The cycle restarted upright.');
+  }
 }
 ui.file.addEventListener('change', event => { void open([...event.target.files]); event.target.value = ''; });
 ui.droparea.addEventListener('dragover', event => { event.preventDefault(); ui.droparea.classList.add('dragging'); });
@@ -125,6 +146,8 @@ ui.next.addEventListener('click', () => void showPage(pageNumber + 1));
 ui.retry.addEventListener('click', () => { ui.retry.hidden = true; cache.delete(pageNumber); void showPage(pageNumber); });
 ui.pause.addEventListener('click', () => { settle(); userPaused = !userPaused; sync(); controls(); });
 ui.speed.addEventListener('input', () => { settle(); speed = Number(ui.speed.value); sync(); controls(); });
+ui.minturns.addEventListener('change', () => changeTurnRange('min'));
+ui.maxturns.addEventListener('change', () => changeTurnRange('max'));
 ui.normal.addEventListener('change', () => { normalMode = ui.normal.checked; redraw(); });
 motion.addEventListener('change', redraw);
 document.addEventListener('visibilitychange', () => { settle(); sync(); });

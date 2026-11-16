@@ -1,3 +1,5 @@
+import { createFontFamily } from './spinner.js';
+
 export class ReaderView {
   constructor(root) { this.root = root; this.animations = []; }
 
@@ -8,7 +10,7 @@ export class ReaderView {
     if (message) { const p = document.createElement('p'); p.textContent = message; p.className = 'placeholder'; this.root.append(p); }
   }
 
-  show(model, { normal, seed, elapsed, speed, playing, parameters }) {
+  show(model, { normal, seed, elapsed, speed, playing, parameters, turnRange }) {
     this.clear();
     const plain = document.createElement('p');
     plain.className = 'reader-plain';
@@ -22,6 +24,7 @@ export class ReaderView {
     this.root.append(visual);
     let word = null;
     let previousPeriod;
+    let previousFamily;
     for (const grapheme of model.graphemes) {
       const value = grapheme.text;
       if (/\s/u.test(value)) {
@@ -33,8 +36,11 @@ export class ReaderView {
       if (!grapheme.eligible) { word.append(document.createTextNode(value)); continue; }
       const box = document.createElement('span'); box.className = 'letter-box';
       const inner = document.createElement('span'); inner.className = 'letter'; inner.textContent = value;
+      const family = createFontFamily(seed, model.pageNumber, grapheme.index, previousFamily);
+      inner.style.fontFamily = family;
+      previousFamily = family;
       box.append(inner); word.append(box);
-      const { period, angle } = parameters(seed, model.pageNumber, grapheme.index, previousPeriod);
+      const { period, angle } = parameters(seed, model.pageNumber, grapheme.index, previousPeriod, turnRange);
       previousPeriod = period;
       const animation = inner.animate([{ transform: `rotate(${angle}deg)` }, { transform: `rotate(${angle + 360}deg)` }], { duration: period * 1000, iterations: Infinity, easing: 'linear' });
       animation.pause();

@@ -15,6 +15,7 @@ header p { margin: 0 0 22px; color: #505664; }
 button { font: inherit; border: 1px solid #9ca9bf; border-radius: 7px; background: #f8faff; padding: 7px 12px; cursor: pointer; }
 button:hover:enabled { background: #e9f1ff; }
 button:disabled,input:disabled { opacity: .5; cursor: default; }
+select { font: inherit; border: 1px solid #9ca9bf; border-radius: 7px; background: #fff; padding: 7px; }
 :focus-visible { outline: 3px solid #2063d1; outline-offset: 3px; }
 #speed { width: 145px; }
 .toggle { white-space: nowrap; }

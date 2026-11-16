@@ -1,6 +1,6 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createParameters, angleAt, PageClock, ALIGNMENT_SECONDS } from '../../src/spinner.js';
+import { createParameters, createFontFamily, FONT_FAMILIES, angleAt, PageClock, ALIGNMENT_SECONDS } from '../../src/spinner.js';
 
 function fixture(conditions = {}) {
   let time = 0;
@@ -75,9 +75,43 @@ test('parameter generation rejects invalid identities and prior periods', () => 
   for (const index of [-1, 0.5, NaN, Number.MAX_SAFE_INTEGER + 1]) {
     assert.throws(() => createParameters('s', 1, index));
   }
-  for (const period of [null, NaN, Infinity, 2.999, 8.001]) {
+  for (const period of [null, NaN, Infinity, 1.999, 12.001]) {
     assert.throws(() => createParameters('s', 1, 0, period));
   }
+});
+
+test('chosen speed range keeps adjacent letters distinct and preserves shared alignment', () => {
+  for (const range of [{ minTurns: 1, maxTurns: 2 }, { minTurns: 4, maxTurns: 6 }]) {
+    let previous;
+    const observed = new Set();
+    for (let index = 0; index < 100; index++) {
+      const parameter = createParameters('range', 1, index, previous, range);
+      const turns = ALIGNMENT_SECONDS / parameter.period;
+      assert.ok(turns >= range.minTurns && turns <= range.maxTurns);
+      if (previous !== undefined) assert.notEqual(parameter.period, previous);
+      assert.ok(Math.abs(angleAt(parameter, ALIGNMENT_SECONDS)) < 1e-9);
+      observed.add(turns);
+      previous = parameter.period;
+    }
+    assert.ok(observed.size > 1);
+  }
+  for (const range of [{ minTurns: 2, maxTurns: 2 }, { minTurns: 0, maxTurns: 2 }, { minTurns: 2, maxTurns: 7 }]) {
+    assert.throws(() => createParameters('range', 1, 0, undefined, range));
+  }
+});
+
+test('letter fonts vary deterministically across adjacent eligible letters', () => {
+  let previous;
+  const observed = new Set();
+  for (let index = 0; index < 60; index++) {
+    const family = createFontFamily('fonts', 1, index, previous);
+    assert.ok(FONT_FAMILIES.includes(family));
+    if (previous) assert.notEqual(family, previous);
+    assert.equal(createFontFamily('fonts', 1, index, previous), family);
+    observed.add(family);
+    previous = family;
+  }
+  assert.ok(observed.size >= 3);
 });
 
 test('angle equation rotates clockwise, wraps and follows speed-scaled seconds', () => {

@@ -9,6 +9,7 @@
       <div class="document-controls"><strong id="filename">No PDF selected</strong><button id="close" disabled>Close PDF</button></div>
       <div class="controls"><button id="previous" disabled>Previous</button><span id="page-label">Page —</span><button id="next" disabled>Next</button><button id="retry" hidden>Retry page</button></div>
       <div class="controls"><button id="pause" disabled>Pause</button><label for="speed">Speed <output id="speed-value">1.00×</output></label><input id="speed" type="range" min="0.25" max="2" step="0.05" value="1" disabled><label class="toggle"><input id="normal" type="checkbox" disabled> Normal text</label></div>
+      <div class="controls"><label for="min-turns">Slowest letters</label><select id="min-turns"><option value="1">1 turn / 12s</option><option value="2" selected>2 turns / 12s</option><option value="3">3 turns / 12s</option><option value="4">4 turns / 12s</option><option value="5">5 turns / 12s</option></select><label for="max-turns">Fastest letters</label><select id="max-turns"><option value="2">2 turns / 12s</option><option value="3">3 turns / 12s</option><option value="4" selected>4 turns / 12s</option><option value="5">5 turns / 12s</option><option value="6">6 turns / 12s</option></select></div>
     </section>
     <p id="status" role="status" aria-live="polite">Choose a PDF to begin.</p>
     <p class="scope">Best-effort extracted text. Complex PDF layouts may read out of order.</p>

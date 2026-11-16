@@ -85,3 +85,27 @@ test('Georgian letters spin and share an upright alignment', async ({ page }) =>
   });
   expect(result).toEqual({ count: 9, initial: true, aligned: true, text: 'გამარჯობა' });
 });
+
+test('user chooses letter speed range and sees varied fonts', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#file').setInputFiles({ name: 'styles.pdf', mimeType: 'application/pdf', buffer: makePdf(['Different letters']) });
+  await expect(page.locator('.letter')).toHaveCount(16);
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.locator('#min-turns').selectOption('4');
+  await expect(page.locator('#max-turns')).toHaveValue('5');
+  await page.locator('#max-turns').selectOption('6');
+  const styles = await page.locator('.letter').evaluateAll(elements => elements.map(element => ({
+    duration: element.getAnimations()[0].effect.getTiming().duration,
+    font: getComputedStyle(element).fontFamily,
+    transform: getComputedStyle(element).transform,
+  })));
+  assertStyles(styles);
+  await expect(page.locator('#status')).toContainText('cycle restarted upright');
+});
+
+function assertStyles(styles) {
+  expect(styles.length).toBe(16);
+  expect(new Set(styles.map(style => style.font)).size).toBeGreaterThan(1);
+  for (const style of styles) expect([2000, 2400, 3000]).toContain(style.duration);
+  for (const style of styles) expect(style.transform).toBe('matrix(1, 0, 0, 1, 0, 0)');
+}

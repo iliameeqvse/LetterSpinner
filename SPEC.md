@@ -53,11 +53,11 @@ A single screen contains:
 1. Title and short explanation.
 2. Drop area and native file-picker button, accessible even when a document is already open.
 3. File name, "Page X of Y", Previous, Next and Close PDF.
-4. Pause/Resume, a speed slider with numeric value, and a Normal text checkbox.
+4. Pause/Resume, a speed slider with numeric value, Slowest letters and Fastest letters selectors, and a Normal text checkbox.
 5. Status/error area.
 6. Reading area for one page.
 
-Defaults: spinning mode, playing, speed 1.00x. Speed range 0.25x–2.00x in increments of 0.05x. Base periods are 3, 4 or 6 seconds. All eligible letters become upright together every 12 seconds of active playback at 1x, or every 12/speed seconds at another speed.
+Defaults: spinning mode, playing, speed 1.00x, and two to four turns per 12-second cycle. The user can choose a slowest value from one to five turns and a fastest value from two to six turns, with slowest strictly below fastest. Speed ranges from 0.25x–2.00x in increments of 0.05x. All eligible letters become upright together every 12 seconds of active playback at 1x, or every 12/speed seconds at another constant speed.
 
 - Initial state: reader empty; document controls disabled.
 - Previous/Next: disabled at boundaries and while a page is loading.
@@ -66,6 +66,7 @@ Defaults: spinning mode, playing, speed 1.00x. Speed range 0.25x–2.00x in incr
 - Normal text shows upright, unfragmented text and permits ordinary selection/copy. Unchecking it restores the saved animated pose.
 - Pause/Resume is disabled while normal mode or another forced-static condition applies, but its underlying user choice is retained.
 - Speed remains editable when a readable page exists, including while paused or static; edits affect the next animated playback.
+- Changing the turn range restarts all visited page clocks at zero and immediately redraws the active page upright. If a selector would make the range invalid, adjust the other selector to retain at least two available rates.
 - Navigation resets the reading area's scroll to the top. Mode changes retain scroll position, clamped to the new content height.
 - A successfully selected replacement starts on page 1 and clears old page clocks/cache. Global speed, pause and mode choices survive document replacement within the tab session.
 - Close PDF cancels work and clears file content/state. Global controls retain their values for the next file.
@@ -126,9 +127,10 @@ Each eligible grapheme has a stationary outer layout box and an inner rotating e
 Group ordinary non-whitespace sequences into word containers. Wrap at spaces; allow emergency grapheme-boundary wrapping for a word wider than the reading area. Normal mode renders plain text without letter wrappers. Its line breaks may differ from animated mode.
 
 For each eligible grapheme i:
-- Assign two, three or four full rotations within a shared 12-second cycle. This gives base period T_i of 6, 4 or 3 seconds and start angle A_i = 0 degrees.
+- Assign a whole number of full rotations within a shared 12-second cycle from the user's inclusive range. The default is two, three or four rotations; the full selectable range is one through six. The base period T_i = 12/turns seconds and start angle A_i = 0 degrees.
 - Generate parameters with a deterministic seeded PRNG from a per-document session seed, page number and grapheme index. Store the session seed until close. Re-extraction, resize, toggles and revisits must produce the same parameters.
 - Adjacent eligible graphemes must have different periods. Global uniqueness is unnecessary. Do not reseed at each frame.
+- Give each animated grapheme a stable font family from a system-font palette, with adjacent eligible graphemes using different families. Fonts are allowed to fall back according to availability. Normal-text mode uses the reader's ordinary font.
 - Define angle_i = (360 * E_page / T_i) mod 360. At E_page = 0, 12, 24, ... seconds, every eligible letter is upright.
 - E_page is accumulated speed-scaled active time in seconds, initially zero for each page.
 - Rotation is clockwise, linear and infinite.
@@ -181,7 +183,7 @@ Each subsystem has an explicit disposal operation. Controller owns document and 
 | A02 | Split fragments "Hel" and "lo" concatenate; a gap above the specified threshold before "world" yields "Hello world". Exercise threshold boundaries with pure-data tests. |
 | A03 | Two physical lines join with one space; explicit repeated spaces collapse; line-end hyphens remain. No automatic paragraph inference occurs. |
 | A04 | Presentation ligatures expand; decomposed accented Latin becomes an intact grapheme; Georgian letters spin in pure or mixed Latin/Georgian text; emoji and digits remain intact and stationary. Other scripts and RTL use the specified static fallback. |
-| A05 | On a known paragraph, adjacent letter periods differ, all periods are 3, 4 or 6 seconds at 1x, and poses follow the defined clock equation. Every eligible letter is upright together at 0, 12 and 24 accumulated seconds. |
+| A05 | On a known paragraph, adjacent letter periods differ and remain within the selected turn range. With the defaults, periods are 3, 4 or 6 seconds at 1x. Every eligible letter is upright together at 0, 12 and 24 accumulated seconds; adjacent eligible letters have different assigned font families. |
 | A06 | Pause for at least one second changes clock/angles by zero; resume continues. Compare model time exactly and rendered angles with a 2-degree tolerance after settling. |
 | A07 | Changing speed while running preserves the instantaneous logical angle and changes subsequent angular velocity. While paused, changing speed leaves the pose unchanged. Rapid changes settle at the final selected value. |
 | A08 | Normal mode provides coherent selectable text; switching back restores the saved pose. Page and scroll position are retained as specified. |

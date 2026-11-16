@@ -2,9 +2,16 @@
  * Deterministic animation math; no DOM, PDF, timers or persistent random state.
  * Periods are seconds, angles are clockwise degrees, timestamps are monotonic ms.
  */
-const MIN_PERIOD = 3;
-const MAX_PERIOD = 8;
+const MIN_PERIOD = 2;
+const MAX_PERIOD = 12;
 export const ALIGNMENT_SECONDS = 12;
+export const FONT_FAMILIES = Object.freeze([
+  '"Segoe UI", sans-serif',
+  '"Sylfaen", serif',
+  '"Georgia", serif',
+  '"Arial", sans-serif',
+  '"Times New Roman", serif',
+]);
 const CONDITION_KEYS = ['speed', 'userPaused', 'normalMode', 'hidden', 'ready', 'animationAllowed'];
 
 function finite(value, name) {
@@ -33,10 +40,10 @@ function validateConditions(conditions) {
  * Pass previousPeriod from the previous ELIGIBLE grapheme, even across spaces,
  * punctuation or digits, to guarantee different adjacent eligible periods.
  * All letters start upright and become upright together every 12 seconds of
- * accumulated playback. Two, three or four full turns per cycle give base
- * periods of 6, 4 or 3 seconds. Rebuild in order for identical results.
+ * accumulated playback. The user chooses an inclusive range of whole turns
+ * per cycle. Rebuild in order for identical results.
  */
-export function createParameters(seed, pageNumber, index, previousPeriod) {
+export function createParameters(seed, pageNumber, index, previousPeriod, { minTurns = 2, maxTurns = 4 } = {}) {
   if (typeof seed !== 'string' && !(typeof seed === 'number' && Number.isFinite(seed))) {
     throw new TypeError('seed must be a string or finite number');
   }
@@ -49,8 +56,12 @@ export function createParameters(seed, pageNumber, index, previousPeriod) {
   if (previousPeriod !== undefined) {
     finite(previousPeriod, 'previousPeriod');
     if (previousPeriod < MIN_PERIOD || previousPeriod > MAX_PERIOD) {
-      throw new RangeError('previousPeriod must be between 3 and 8');
+      throw new RangeError('previousPeriod must be between 2 and 12');
     }
+  }
+  if (!Number.isInteger(minTurns) || !Number.isInteger(maxTurns)
+      || minTurns < 1 || maxTurns > 6 || minTurns >= maxTurns) {
+    throw new RangeError('Choose at least two speeds between 1 and 6 turns per cycle');
   }
   // Framing distinguishes both seed types and tuples containing delimiters.
   const key = JSON.stringify([seed, pageNumber, index]);
@@ -65,9 +76,22 @@ export function createParameters(seed, pageNumber, index, previousPeriod) {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return (value ^ (value >>> 14)) >>> 0;
   }
-  let turns = 2 + randomUint32() % 3;
-  if (ALIGNMENT_SECONDS / turns === previousPeriod) turns = 2 + (turns - 1) % 3;
+  const choices = maxTurns - minTurns + 1;
+  let turns = minTurns + randomUint32() % choices;
+  if (ALIGNMENT_SECONDS / turns === previousPeriod) turns = minTurns + (turns - minTurns + 1) % choices;
   return { period: ALIGNMENT_SECONDS / turns, angle: 0 };
+}
+
+/** Stable font choices; adjacent eligible letters get different families. */
+export function createFontFamily(seed, pageNumber, index, previousFamily) {
+  if (typeof seed !== 'string' && !(typeof seed === 'number' && Number.isFinite(seed))) throw new TypeError('Invalid seed');
+  if (!Number.isSafeInteger(pageNumber) || pageNumber < 1 || !Number.isSafeInteger(index) || index < 0) throw new RangeError('Invalid page or index');
+  const key = JSON.stringify([seed, pageNumber, index, 'font']);
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i++) hash = Math.imul(hash ^ key.charCodeAt(i), 16777619) >>> 0;
+  let choice = hash % FONT_FAMILIES.length;
+  if (FONT_FAMILIES[choice] === previousFamily) choice = (choice + 1) % FONT_FAMILIES.length;
+  return FONT_FAMILIES[choice];
 }
 
 /** Evaluate the specified pose equation without rounding; elapsed is seconds. */
